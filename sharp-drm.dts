@@ -1,62 +1,52 @@
 /dts-v1/;
 /plugin/;
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/gpio/meson-g12a-gpio.h>
+
 / {
-	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
+    compatible = "radxa,zero", "radxa,zero2", "amlogic,g12a", "amlogic,g12b";
 
-	fragment@0 {
-		target = <&spi0>;
-		__overlay__ {
-			status = "okay";
+    fragment@0 {
+        target = <&spicc1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
 
-			spidev@0{
-				status = "disabled";
-			};
+            pinctrl-0 = <&spicc1_pins &spicc1_ss0_pins>;
+            pinctrl-names = "default";
 
-			spidev@1{
-				status = "disabled";
-			};
-		};
-	};
+            cs-gpios = <&gpio GPIOH_6 GPIO_ACTIVE_HIGH>;
 
-	fragment@1 {
-                target = <&spi0_pins>;
-                __overlay__ {
-                        brcm,pins = <0x0a 0x0b>; /* skipping bcm9 MISO */
-                };
+            status = "okay";
+
+            sharp_drm: sharp_drm@0 {
+                compatible = "sharp-drm";
+                reg = <0>;
+
+                spi-cs-high = <1>;
+                spi-max-frequency = <2000000>;
+
+                buswidth = <8>;
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&sharp_pins>;
+
+                vcom-gpios = <&gpio GPIOX_10 GPIO_ACTIVE_HIGH>;
+            };
         };
+    };
 
-	fragment@2 {
-		target = <&gpio>;
-		__overlay__ {
-			sharp_pins: sharp_pins {
-				brcm,pins = <23 22>;
-				brcm,function = <1 1>; /* out */
-			};
-		};
-	};
-
-	fragment@3 {
-		target = <&spi0>;
-		__overlay__ {
-			/* needed to avoid dtc warning */
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			sharp_drm: sharp_drm@0{
-				compatible = "sharp-drm";
-				reg = <0>;
-				pinctrl-names = "default";
-				pinctrl-0 = <&sharp_pins>;
-
-				vcom-gpios = <&gpio 23 0>;
-				disp-gpios = <&gpio 22 0>;
-
-				spi-cs-high = <1>;
-				spi-max-frequency = <4000000>;
-				buswidth = <8>;
-				debug = <0>;
-			};
-		};
-	};
+    fragment@1 {
+        target = <&periphs_pinctrl>;
+        __overlay__ {
+            sharp_pins: sharp_pins@0 {
+                mux {
+                    groups = "GPIOX_10";
+                    function = "gpio_periphs";
+                    drive-strength-microamp = <4000>;
+                };
+            };
+        };
+    };
 };
